@@ -33,11 +33,11 @@ jobs:
 
       - name: Install Playwright browsers
         run: |
-          python -m Browser.entry init
+          rfbrowser init
 
       - name: Start Application Server
         run: |
-          python -m uvicorn main:app --host 127.0.0.1 --port 8000 &
+          python -m uvicorn app:app --host 127.0.0.1 --port 8000 &
           # Wait until the server is accepting connections
           until curl -s http://127.0.0.1:8000/ > /dev/null; do
             sleep 1
@@ -71,12 +71,15 @@ jobs:
 
       - name: Install Playwright browsers
         run: |
-          python -m Browser.entry init
+          rfbrowser init
 
       - name: Start Application Server
         run: |
-          python -m uvicorn main:app --host 127.0.0.1 --port 8000 &
-          sleep 3
+          python -m uvicorn app:app --host 127.0.0.1 --port 8000 &
+          # Wait until the server is accepting connections
+          until curl -s http://127.0.0.1:8000/ > /dev/null; do
+            sleep 1
+          done
 
       - name: Run Robot Framework regression tests
         run: |
