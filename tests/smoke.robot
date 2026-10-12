@@ -1,17 +1,13 @@
-*** Settings ***
-Library    SeleniumLibrary    run_on_failure=Capture Page Screenshot
-
 *** Test Cases ***
-Verify Kiip Smoke Page
-    [Tags]    smoke
-    ${options}=    Evaluate    __import__('selenium.webdriver.chrome.options', fromlist=['Options']).Options()
-    Evaluate    $options.add_argument('--headless=new')
-    Evaluate    $options.add_argument('--no-sandbox')
-    Evaluate    $options.add_argument('--disable-dev-shm-usage')
-    
-    Open Browser    ${BASE_URL}    chrome    options=${options}
+Verify Kiip Secondary Elements and Interactive State
+    [Tags]    regression    smoke
+    Go To    ${BASE_URL}
     Set Screenshot Directory    ./logs/screenshots
-    
+
+    # Check header / branding
     Page Should Contain    Welcome to Kiip Demo
+
+    # Verify interactive mock elements (checking backend status badge)
     Element Should Be Visible    id=status
-    Close Browser
+    ${status_text}=    Get Text    id=status
+    Should Not Be Empty    ${status_text}
