@@ -34,6 +34,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Run Unit Tests with Pytest
+        run: |
+          pytest tests/unit/
+
       - name: Start FastAPI Mock App Background Server
         run: |
           uvicorn app:app --host 127.0.0.1 --port 8000 &
@@ -65,4 +69,6 @@ jobs:
       - name: Simulate AWS Deployment
         if: success()
         run: |
-          echo "Pipeline completed successfully for ${{ github.event.inputs.test_suite || 'push' }}!"
+          echo "Pipeline completed successfully!"
+          echo "Simulating secure deployment to AWS ECS / S3..."
+          echo "Deployment complete!"
