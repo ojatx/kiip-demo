@@ -1,0 +1,49 @@
+name: Kiip Demo CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Start Local Mock App
+        run: |
+          uvicorn app:app --host 127.0.0.1 --port 8000 &
+          sleep 2
+
+      - name: Run Smoke Tests
+        run: |
+          robot --include smoke --variable BASE_URL:http://127.0.0.1:8000 --outputdir ./logs/smoke tests/
+
+      - name: Upload Test Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: robot-test-artifacts
+          path: ./logs/
+
+      - name: Simulated AWS Deployment
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          echo "Tests passed successfully!"
+          echo "Simulating secure deployment to AWS ECS / S3..."
+          echo "Deployment complete."

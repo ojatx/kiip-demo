@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<robot generator="Robot 7.0 (Python 3.11.15 on darwin)" generated="2026-10-12T06:50:15.740424" rpa="false" schemaversion="5">
+<suite id="s1" name="Tests" source="/Users/oscarjuarez/kiip-demo/tests">
+<suite id="s1-s1" name="Smoke" source="/Users/oscarjuarez/kiip-demo/tests/smoke.robot">
+<test id="s1-s1-t1" name="Verify Kiip Smoke Page" line="5">
+<kw name="Evaluate" owner="BuiltIn">
+<msg time="2026-10-12T06:50:15.818074" level="INFO">${options} = &lt;selenium.webdriver.chrome.options.Options object at 0x10728a410&gt;</msg>
+<var>${options}</var>
+<arg>__import__('selenium.webdriver.chrome.options', fromlist=['Options']).Options()</arg>
+<doc>Evaluates the given expression in Python and returns the result.</doc>
+<status status="PASS" start="2026-10-12T06:50:15.817666" elapsed="0.000423"/>
+</kw>
+<kw name="Evaluate" owner="BuiltIn">
+<arg>$options.add_argument('--headless=new')</arg>
+<doc>Evaluates the given expression in Python and returns the result.</doc>
+<status status="PASS" start="2026-10-12T06:50:15.818166" elapsed="0.000948"/>
+</kw>
+<kw name="Evaluate" owner="BuiltIn">
+<arg>$options.add_argument('--no-sandbox')</arg>
+<doc>Evaluates the given expression in Python and returns the result.</doc>
+<status status="PASS" start="2026-10-12T06:50:15.819177" elapsed="0.000074"/>
+</kw>
+<kw name="Evaluate" owner="BuiltIn">
+<arg>$options.add_argument('--disable-dev-shm-usage')</arg>
+<doc>Evaluates the given expression in Python and returns the result.</doc>
+<status status="PASS" start="2026-10-12T06:50:15.819303" elapsed="0.000069"/>
+</kw>
+<kw name="Open Browser" owner="SeleniumLibrary">
+<msg time="2026-10-12T06:50:15.819542" level="INFO">Opening browser 'chrome' to base url 'http://127.0.0.1:8000'.</msg>
+<arg>${BASE_URL}</arg>
+<arg>chrome</arg>
+<arg>options=${options}</arg>
+<doc>Opens a new browser instance to the optional ``url``.</doc>
+<status status="PASS" start="2026-10-12T06:50:15.819441" elapsed="6.941071"/>
+</kw>
+<kw name="Set Screenshot Directory" owner="SeleniumLibrary">
+<arg>./logs/screenshots</arg>
+<doc>Sets the directory for captured screenshots.</doc>
+<status status="PASS" start="2026-10-12T06:50:22.760899" elapsed="0.000349"/>
+</kw>
+<kw name="Page Should Contain" owner="SeleniumLibrary">
+<msg time="2026-10-12T06:50:22.767389" level="INFO">Current page contains text 'Welcome to Kiip Demo'.</msg>
+<arg>Welcome to Kiip Demo</arg>
+<doc>Verifies that current page contains ``text``.</doc>
+<status status="PASS" start="2026-10-12T06:50:22.761322" elapsed="0.006115"/>
+</kw>
+<kw name="Element Should Be Visible" owner="SeleniumLibrary">
+<msg time="2026-10-12T06:50:22.773783" level="INFO">Element 'id=status' is displayed.</msg>
+<arg>id=status</arg>
+<doc>Verifies that the element identified by ``locator`` is visible.</doc>
+<status status="PASS" start="2026-10-12T06:50:22.767563" elapsed="0.006265"/>
+</kw>
+<kw name="Close Browser" owner="SeleniumLibrary">
+<doc>Closes the current browser.</doc>
+<status status="PASS" start="2026-10-12T06:50:22.773936" elapsed="0.071936"/>
+</kw>
+<tag>smoke</tag>
+<status status="PASS" start="2026-10-12T06:50:15.817336" elapsed="7.028729"/>
+</test>
+<status status="PASS" start="2026-10-12T06:50:15.749516" elapsed="7.096775"/>
+</suite>
+<status status="PASS" start="2026-10-12T06:50:15.741181" elapsed="7.105322"/>
+</suite>
+<statistics>
+<total>
+<stat pass="1" fail="0" skip="0">All Tests</stat>
+</total>
+<tag>
+<stat pass="1" fail="0" skip="0">smoke</stat>
+</tag>
+<suite>
+<stat pass="1" fail="0" skip="0" id="s1" name="Tests">Tests</stat>
+<stat pass="1" fail="0" skip="0" id="s1-s1" name="Smoke">Tests.Smoke</stat>
+</suite>
+</statistics>
+<errors>
+</errors>
+</robot>
