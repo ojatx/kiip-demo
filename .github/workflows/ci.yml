@@ -9,23 +9,15 @@ on:
 jobs:
   test-and-deploy:
     runs-on: [self-hosted, macOS, ARM64]
-    env:
-      HOME: /Users/oscarjuarez
-      RUNNER_TOOL_CACHE: /Users/oscarjuarez/hostedtoolcache
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
       - name: Install Dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          python3 -m pip install --upgrade pip
+          pip3 install -r requirements.txt
 
       - name: Start FastAPI Mock App Background Server
         run: |
@@ -48,8 +40,3 @@ jobs:
             log.html
             report.html
           retention-days: 30
-
-      - name: Simulate AWS Deployment
-        if: success()
-        run: |
-          echo "Tests passed successfully on local Apple Silicon runner!"
