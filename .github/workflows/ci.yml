@@ -8,16 +8,21 @@ on:
 
 jobs:
   test-and-deploy:
-    runs-on: [self-hosted, macOS, ARM64]
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
       - name: Install Dependencies
         run: |
-          python3 -m pip install --upgrade pip
-          pip3 install -r requirements.txt
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
       - name: Start FastAPI Mock App Background Server
         run: |
@@ -40,3 +45,10 @@ jobs:
             log.html
             report.html
           retention-days: 30
+
+      - name: Simulate AWS Deployment
+        if: success()
+        run: |
+          echo "Tests passed successfully on GitHub cloud runner!"
+          echo "Simulating secure deployment to AWS ECS / S3..."
+          echo "Deployment complete!"
