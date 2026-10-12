@@ -18,3 +18,4 @@ def read_root():
 @app.get("/status")
 def get_status():
     return {"status": "healthy"}
+# Testing PR workflow
