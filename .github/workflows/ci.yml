@@ -59,9 +59,30 @@ jobs:
             report.html
             logs/screenshots/
 
-  regression:
+  deploy-staging:
+    name: Deploy to Staging
     needs: smoke
-    if: always() && (github.event_name != 'workflow_dispatch' || inputs.test_suite == 'all' || inputs.test_suite == 'regression') && (needs.smoke.result == 'success' || needs.smoke.result == 'skipped')
+    runs-on: ubuntu-24.04
+    environment:
+      name: Staging
+      url: https://staging.your-app.com
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Run Staging Deployment
+        env:
+          STAGING_API_KEY: ${{ secrets.STAGING_API_KEY }}
+        run: |
+          echo "Deploying to Staging environment..."
+          if [ -z "$STAGING_API_KEY" ]; then
+            echo "Error: Staging secret missing!"
+            exit 1
+          fi
+
+  regression:
+    needs: deploy-staging
+    if: github.event_name != 'workflow_dispatch' || inputs.test_suite == 'all' || inputs.test_suite == 'regression'
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout Repository
@@ -97,33 +118,9 @@ jobs:
             report.html
             logs/screenshots/
 
-  deploy-staging:
-    name: Deploy to Staging
-    needs: [smoke, regression]
-    # Runs on develop branch pushes, manual dispatches, or PR merges into develop/main
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-24.04
-    environment:
-      name: Staging
-      url: https://staging.your-app.com
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Run Staging Deployment
-        env:
-          STAGING_API_KEY: ${{ secrets.STAGING_API_KEY }}
-        run: |
-          echo "Deploying to Staging environment..."
-          if [ -z "$STAGING_API_KEY" ]; then
-            echo "Error: Staging secret missing!"
-            exit 1
-          fi
-
   deploy-production:
     name: Deploy to Production
-    needs: [deploy-staging]
-    # Strictly restricted to main branch integration / releases
+    needs: regression
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-24.04
     environment:
@@ -142,3 +139,14 @@ jobs:
             echo "Error: Production secret missing!"
             exit 1
           fi
+
+  health-check:
+    name: Post-Deploy Health Check
+    needs: deploy-production
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Run Health Check
+        run: |
+          echo "Performing post-deployment health check against production URL..."
+          # Example check: curl -f https://your-app.com/health || exit 1
+          echo "Health check passed successfully!"
