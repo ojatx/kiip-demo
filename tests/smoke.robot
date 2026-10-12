@@ -1,3 +1,6 @@
+*** Settings ***
+Library    SeleniumLibrary
+
 *** Test Cases ***
 Verify Kiip Secondary Elements and Interactive State
     [Tags]    regression    smoke
