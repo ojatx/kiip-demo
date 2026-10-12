@@ -30,7 +30,7 @@ jobs:
           sleep 2
       - name: Run Robot Framework Smoke Tests
         run: |
-          robot --include smoke tests/regression.robot
+          robot --include smoke tests/smoke.robot
 
   regression:
     needs: smoke
