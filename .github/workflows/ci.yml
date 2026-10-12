@@ -28,7 +28,7 @@ jobs:
 
       - name: Install Playwright browsers
         run: |
-          python -m Browser.init
+          python -m robot.running.builder Browser.init || python -c "import Browser; Browser.init()"
 
       - name: Start Application Server
         run: |
