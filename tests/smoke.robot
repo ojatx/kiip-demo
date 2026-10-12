@@ -1,5 +1,5 @@
 *** Settings ***
-Library    SeleniumLibrary
+Library    SeleniumLibrary    options=add_argument('--headless')
 
 *** Variables ***
 ${BASE_URL}    http://127.0.0.1:8000
