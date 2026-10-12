@@ -8,7 +8,8 @@ on:
 
 jobs:
   test-and-deploy:
-    runs-on: ubuntu-latest
+    # Target self-hosted runner with macOS and ARM64 labels
+    runs-on: [self-hosted, macOS, ARM64]
 
     steps:
       - name: Checkout Repository
@@ -50,6 +51,6 @@ jobs:
       - name: Simulate AWS Deployment
         if: success()
         run: |
-          echo "Tests passed successfully!"
+          echo "Tests passed successfully on local Apple Silicon runner!"
           echo "Simulating secure deployment to AWS ECS / S3..."
           echo "Deployment complete!"
