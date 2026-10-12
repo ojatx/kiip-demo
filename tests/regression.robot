@@ -9,7 +9,6 @@ Verify Kiip Secondary Elements and Interactive State
     [Tags]    regression
     New Browser    chromium    headless=True
     New Page    ${BASE_URL}
-    Set Screenshot Directory    ./logs/screenshots
 
     # Check header / branding
     Get Text    body    contains    Welcome to Kiip Demo

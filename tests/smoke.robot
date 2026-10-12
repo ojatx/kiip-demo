@@ -10,9 +10,6 @@ Verify Kiip Secondary Elements and Interactive State
     New Browser    chromium    headless=True
     New Page    ${BASE_URL}
     
-    # Set directory for artifact storage
-    Set Screenshot Directory    ./logs/screenshots
-    
     # Check header / branding
     Get Text    body    contains    Welcome to Kiip Demo
 
