@@ -1,6 +1,9 @@
 *** Settings ***
 Library    SeleniumLibrary
 
+*** Variables ***
+${BASE_URL}    http://127.0.0.1:8000
+
 *** Test Cases ***
 Verify Kiip Secondary Elements and Interactive State
     [Tags]    regression    smoke
