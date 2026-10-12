@@ -8,8 +8,9 @@ on:
 
 jobs:
   test-and-deploy:
-    # Target self-hosted runner with macOS and ARM64 labels
     runs-on: [self-hosted, macOS, ARM64]
+    env:
+      HOME: /Users/oscarjuarez
 
     steps:
       - name: Checkout Repository
@@ -28,7 +29,6 @@ jobs:
       - name: Start FastAPI Mock App Background Server
         run: |
           uvicorn app:app --host 127.0.0.1 --port 8000 &
-          # Give the server a brief moment to spin up
           sleep 2
 
       - name: Run Robot Framework Smoke and Regression Tests
