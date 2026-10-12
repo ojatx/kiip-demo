@@ -6,10 +6,21 @@ on:
   pull_request:
     branches: [ main ]
   workflow_dispatch:
+    inputs:
+      test_suite:
+        description: 'Select test suite to run'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - smoke
+          - regression
 
 jobs:
   smoke:
     runs-on: ubuntu-latest
+    if: github.event_name != 'workflow_dispatch' || inputs.test_suite == 'all' || inputs.test_suite == 'smoke'
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -50,6 +61,7 @@ jobs:
 
   regression:
     needs: smoke
+    if: always() && (github.event_name != 'workflow_dispatch' || inputs.test_suite == 'all' || inputs.test_suite == 'regression') && (needs.smoke.result == 'success' || needs.smoke.result == 'skipped')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
