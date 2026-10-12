@@ -28,7 +28,7 @@ jobs:
 
       - name: Install Playwright browsers
         run: |
-          rfbrowser init
+          python -m Browser.init
 
       - name: Start Application Server
         run: |
