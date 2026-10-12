@@ -36,7 +36,7 @@ jobs:
 
       - name: Run Unit Tests with Pytest
         run: |
-          pytest tests/unit/
+          PYTHONPATH=. pytest tests/unit/
 
       - name: Start FastAPI Mock App Background Server
         run: |
