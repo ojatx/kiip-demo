@@ -6,6 +6,15 @@ on:
   pull_request:
     branches: [ main ]
   workflow_dispatch:
+    inputs:
+      test_suite:
+        description: 'Select test suite to run'
+        required: true
+        default: 'regression'
+        type: choice
+        options:
+          - regression
+          - smoke
 
 jobs:
   test-and-deploy:
@@ -30,16 +39,22 @@ jobs:
           uvicorn app:app --host 127.0.0.1 --port 8000 &
           sleep 2
 
-      - name: Run Robot Framework Smoke and Regression Tests
+      - name: Run Robot Framework Tests Based on Selection
         run: |
           mkdir -p logs/screenshots
-          robot --variable BASE_URL:http://127.0.0.1:8000 tests/
+          if [ "${{ github.event.inputs.test_suite }}" == "smoke" ]; then
+            echo "Running Smoke Tests..."
+            robot --variable BASE_URL:http://127.0.0.1:8000 --include smoke tests/
+          else
+            echo "Running Full Regression Tests..."
+            robot --variable BASE_URL:http://127.0.0.1:8000 tests/
+          fi
 
       - name: Upload Test Results & Failure Screenshots
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: robot-test-artifacts
+          name: robot-test-artifacts-${{ github.event.inputs.test_suite || 'push' }}
           path: |
             logs/
             output.xml
@@ -50,6 +65,4 @@ jobs:
       - name: Simulate AWS Deployment
         if: success()
         run: |
-          echo "Tests passed successfully on GitHub cloud runner!"
-          echo "Simulating secure deployment to AWS ECS / S3..."
-          echo "Deployment complete!"
+          echo "Pipeline completed successfully for ${{ github.event.inputs.test_suite || 'push' }}!"
