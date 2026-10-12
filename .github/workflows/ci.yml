@@ -38,7 +38,10 @@ jobs:
       - name: Start Application Server
         run: |
           python -m uvicorn main:app --host 127.0.0.1 --port 8000 &
-          sleep 3
+          # Wait until the server is accepting connections
+          until curl -s http://127.0.0.1:8000/ > /dev/null; do
+            sleep 1
+          done
 
       - name: Run Robot Framework smoke tests
         run: |
