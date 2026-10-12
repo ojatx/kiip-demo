@@ -1,5 +1,5 @@
 *** Settings ***
-Library    SeleniumLibrary    options=add_argument('--headless')
+Library    SeleniumLibrary
 
 *** Variables ***
 ${BASE_URL}    http://127.0.0.1:8000
@@ -7,7 +7,7 @@ ${BASE_URL}    http://127.0.0.1:8000
 *** Test Cases ***
 Verify Kiip Secondary Elements and Interactive State
     [Tags]    regression    smoke
-    Go To    ${BASE_URL}
+    Open Browser    ${BASE_URL}    Chrome    options=add_argument("--headless=new")
     Set Screenshot Directory    ./logs/screenshots
 
     # Check header / branding
@@ -17,3 +17,4 @@ Verify Kiip Secondary Elements and Interactive State
     Element Should Be Visible    id=status
     ${status_text}=    Get Text    id=status
     Should Not Be Empty    ${status_text}
+    Close Browser
