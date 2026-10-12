@@ -7,7 +7,7 @@ app = FastAPI()
 def read_root():
     return """
     <html>
-        <head><title>Kiip Demo</title></head>
+        <head><title>Kiip Demo App</title></head>
         <body>
             <h1>Welcome to Kiip Demo</h1>
             <div id="status">healthy</div>
