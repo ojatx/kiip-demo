@@ -1,4 +1,4 @@
-iname: Kiip Demo CI/CD Pipeline
+name: Kiip Demo CI/CD Pipeline
 
 on:
   push:
