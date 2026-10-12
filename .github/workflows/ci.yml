@@ -19,7 +19,8 @@ on:
 
 jobs:
   smoke:
-    runs-on: ubuntu-latest
+    #runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: github.event_name != 'workflow_dispatch' || inputs.test_suite == 'all' || inputs.test_suite == 'smoke'
     steps:
       - name: Checkout Repository
@@ -62,7 +63,8 @@ jobs:
   regression:
     needs: smoke
     if: always() && (github.event_name != 'workflow_dispatch' || inputs.test_suite == 'all' || inputs.test_suite == 'regression') && (needs.smoke.result == 'success' || needs.smoke.result == 'skipped')
-    runs-on: ubuntu-latest
+    #runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
