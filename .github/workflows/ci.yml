@@ -2,9 +2,9 @@ name: Kiip Demo CI/CD Pipeline
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, develop ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, develop ]
   workflow_dispatch:
     inputs:
       test_suite:
@@ -96,3 +96,47 @@ jobs:
             log.html
             report.html
             logs/screenshots/
+
+  deploy-staging:
+    name: Deploy to Staging
+    needs: [smoke, regression]
+    if: github.ref == 'refs/heads/develop' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    environment:
+      name: Staging
+      url: https://staging.your-app.com
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Run Staging Deployment
+        env:
+          STAGING_API_KEY: ${{ secrets.STAGING_API_KEY }}
+        run: |
+          echo "Deploying to Staging environment..."
+          if [ -z "$STAGING_API_KEY" ]; then
+            echo "Error: Staging secret missing!"
+            exit 1
+          fi
+
+  deploy-production:
+    name: Deploy to Production
+    needs: [smoke, regression]
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    environment:
+      name: Production
+      url: https://your-app.com
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Run Production Deployment
+        env:
+          PRODUCTION_API_KEY: ${{ secrets.PRODUCTION_API_KEY }}
+        run: |
+          echo "Deploying to Production environment..."
+          if [ -z "$PRODUCTION_API_KEY" ]; then
+            echo "Error: Production secret missing!"
+            exit 1
+          fi
