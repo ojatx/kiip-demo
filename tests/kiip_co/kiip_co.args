@@ -1,0 +1,6 @@
+--name Kiip.co Smoke
+--outputdir results/kiip_co
+--include smoke
+--include auth
+--exclude auth-negative
+--loglevel INFO
