@@ -5,7 +5,8 @@ name: Kiip Demo CI/CD Pipeline
 #   - Pull requests:     unit + smoke only (nothing is deployed)
 #   - Push to develop:   ... through regression (staging only)
 #   - Push to main:      the whole chain, production waits for approval
-#   - Manual run:        kiip.co live-site suite, optionally the full chain too
+#   - Manual run:        pick from the "What to run" menu. Smoke / regression run against the code
+#                        of the branch chosen in "Use workflow from" (nothing is deployed).
 
 on:
   push:
@@ -23,6 +24,9 @@ on:
         type: choice
         options:
           - kiip-co-only
+          - smoke
+          - regression
+          - smoke-and-regression
           - full-pipeline
         default: kiip-co-only
       trace:
@@ -56,7 +60,13 @@ jobs:
 
   smoke:
     # Pre-deploy gate: does the app start and serve its basics? Runs against the app started in this job.
+    # Push/PR/full-pipeline: only after unit passes. Manual smoke runs skip unit and run on their own.
     needs: unit
+    if: >-
+      ${{ !cancelled() &&
+      (needs.unit.result == 'success' ||
+       (github.event_name == 'workflow_dispatch' &&
+        (inputs.target == 'smoke' || inputs.target == 'smoke-and-regression'))) }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -111,13 +121,21 @@ jobs:
         run: echo "Deploying to staging environment..."
 
   regression:
-    # Full regression against the freshly deployed staging environment.
-    needs: deploy-staging
+    # Push/full-pipeline: full regression against the freshly deployed staging environment.
+    # Manual "regression": runs on its own; "smoke-and-regression": runs after smoke passes.
+    needs: [smoke, deploy-staging]
+    if: >-
+      ${{ !cancelled() &&
+      (needs.deploy-staging.result == 'success' ||
+       (github.event_name == 'workflow_dispatch' &&
+        (inputs.target == 'regression' ||
+         (inputs.target == 'smoke-and-regression' && needs.smoke.result == 'success')))) }}
     runs-on: ubuntu-latest
     env:
-      # Set a repository variable STAGING_URL once a real staging site exists.
-      # Until then this falls back to the app started inside this job.
-      BASE_URL: ${{ vars.STAGING_URL || 'http://127.0.0.1:8000' }}
+      # Pipeline runs: set a repository variable STAGING_URL once a real staging site exists
+      # (falls back to the app started inside this job). Manual smoke/regression runs always
+      # test the selected branch's code, so they always use the local app.
+      BASE_URL: ${{ (github.event_name == 'workflow_dispatch' && inputs.target != 'full-pipeline') && 'http://127.0.0.1:8000' || vars.STAGING_URL || 'http://127.0.0.1:8000' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -141,8 +159,8 @@ jobs:
         run: |
           rfbrowser init chromium
 
-      - name: Start Application Server (stand-in for staging)
-        if: ${{ !vars.STAGING_URL }}
+      - name: Start Application Server (local app / stand-in for staging)
+        if: env.BASE_URL == 'http://127.0.0.1:8000'
         run: |
           python -m uvicorn app:app --host 127.0.0.1 --port 8000 &
           until curl -s http://127.0.0.1:8000/ > /dev/null; do
@@ -179,7 +197,7 @@ jobs:
   # Smoke tests against the LIVE kiip.co site. Manual runs only, and outside the
   # unit -> smoke -> staging -> regression -> production chain so an external outage can't block a deploy.
   kiip-co-smoke:
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' && (inputs.target == 'kiip-co-only' || inputs.target == 'full-pipeline')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
