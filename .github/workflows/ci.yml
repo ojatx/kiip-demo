@@ -1,5 +1,12 @@
 name: Kiip Demo CI/CD Pipeline
 
+# Flow:
+#   unit ─► smoke ─► deploy-staging ─► regression (vs staging) ─► [approval] ─► deploy-production
+#   - Pull requests:     unit + smoke only (nothing is deployed)
+#   - Push to develop:   ... through regression (staging only)
+#   - Push to main:      the whole chain, production waits for approval
+#   - Manual run:        kiip.co live-site suite, optionally the full chain too
+
 on:
   push:
     branches: [ main, develop ]
@@ -24,9 +31,9 @@ on:
         default: false
 
 jobs:
-  smoke:
-    # Push/PR as before; on a manual run only when "full-pipeline" is picked.
-    # (regression + deploy jobs depend on this, so they follow it.)
+  unit:
+    # Push/PR always; on a manual run only when "full-pipeline" is picked.
+    # Every later stage depends on this, so they follow it.
     if: github.event_name != 'workflow_dispatch' || inputs.target == 'full-pipeline'
     runs-on: ubuntu-latest
     steps:
@@ -38,34 +45,18 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Install Playwright browsers
+      - name: Run unit tests
         run: |
-          rfbrowser init
+          python -m pytest tests/unit -v
 
-      - name: Start Application Server
-        run: |
-          python -m uvicorn app:app --host 127.0.0.1 --port 8000 &
-          # Wait until the server is accepting connections
-          until curl -s http://127.0.0.1:8000/ > /dev/null; do
-            sleep 1
-          done
-
-      - name: Run Robot Framework smoke tests
-        run: |
-          robot tests/smoke.robot
-
-  regression:
-    needs: smoke
+  smoke:
+    # Pre-deploy gate: does the app start and serve its basics? Runs against the app started in this job.
+    needs: unit
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -88,7 +79,7 @@ jobs:
 
       - name: Install Playwright browsers
         run: |
-          rfbrowser init
+          rfbrowser init chromium
 
       - name: Start Application Server
         run: |
@@ -98,27 +89,95 @@ jobs:
             sleep 1
           done
 
-      - name: Run Robot Framework regression tests
+      - name: Run Robot Framework smoke tests
         run: |
-          robot tests/regression.robot
+          robot --outputdir results/smoke tests/smoke.robot
+
+      - name: Upload smoke results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-results
+          path: results/smoke/
 
   deploy-staging:
-    needs: regression
+    # Only real merges (push) or a manual full-pipeline run deploy; pull requests stop after smoke.
+    needs: smoke
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.target == 'full-pipeline')
     runs-on: ubuntu-latest
+    environment: staging
     steps:
       - name: Deploy to Staging Stub
         run: echo "Deploying to staging environment..."
 
-  deploy-production:
+  regression:
+    # Full regression against the freshly deployed staging environment.
     needs: deploy-staging
+    runs-on: ubuntu-latest
+    env:
+      # Set a repository variable STAGING_URL once a real staging site exists.
+      # Until then this falls back to the app started inside this job.
+      BASE_URL: ${{ vars.STAGING_URL || 'http://127.0.0.1:8000' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Install Playwright browsers
+        run: |
+          rfbrowser init chromium
+
+      - name: Start Application Server (stand-in for staging)
+        if: ${{ !vars.STAGING_URL }}
+        run: |
+          python -m uvicorn app:app --host 127.0.0.1 --port 8000 &
+          until curl -s http://127.0.0.1:8000/ > /dev/null; do
+            sleep 1
+          done
+
+      - name: Run Robot Framework regression tests
+        run: |
+          echo "Running regression against: $BASE_URL"
+          robot --outputdir results/regression -v BASE_URL:"$BASE_URL" tests/regression.robot
+
+      - name: Upload regression results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: regression-results
+          path: results/regression/
+
+  deploy-production:
+    # Only from main, only after regression passes. The "production" environment can require
+    # a manual approval: Settings → Environments → production → Required reviewers.
+    needs: regression
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
+    environment: production
     steps:
       - name: Deploy to Production Stub
         run: echo "Deploying to production environment..."
 
+      - name: Post-deploy check (stub)
+        # Replace with a real health check / smoke run against the production URL.
+        run: echo "Verifying production is up..."
+
   # Smoke tests against the LIVE kiip.co site. Manual runs only, and outside the
-  # smoke -> regression -> deploy chain so an external outage can't block a deploy.
+  # unit -> smoke -> staging -> regression -> production chain so an external outage can't block a deploy.
   kiip-co-smoke:
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
