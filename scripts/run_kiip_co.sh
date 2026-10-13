@@ -2,6 +2,7 @@
 # Runs the kiip.co smoke suite (tests/kiip_co) against the live site.
 # Usage: bash scripts/run_kiip_co.sh [--trace] [--video] [extra robot args] [tests/kiip_co/<file>.robot]
 #   --trace  Playwright trace per suite -> results/kiip_co/traces/*.zip (view: bash scripts/show_trace.sh)
+#   --known-issues  run only tests tagged known-issue (documented bugs, expected to fail)
 #   --video  video of each browser session, embedded in results/kiip_co/log.html
 #   e.g. bash scripts/run_kiip_co.sh --trace -v HEADLESS:False
 set -euo pipefail
@@ -32,11 +33,12 @@ if [ ! -d "$(python -c 'import Browser, os; print(os.path.dirname(Browser.__file
   rfbrowser init chromium
 fi
 
-ARGS=(); TARGETS=()
+ARGS=(); TARGETS=(); KNOWN=0
 for a in "$@"; do
   case "$a" in
     --trace) ARGS+=(-v TRACE:True) ;;
     --video) ARGS+=(-v VIDEO:True) ;;
+    --known-issues) KNOWN=1 ;;
     *.robot|tests/kiip_co|tests/kiip_co/*) TARGETS+=("$a") ;;
     *) ARGS+=("$a") ;;
   esac
@@ -47,7 +49,13 @@ rm -rf results/kiip_co/traces
 echo "==> Running kiip.co smoke suite"
 status=0
 # Options must come before the test path(s).
-robot -A tests/kiip_co/kiip_co.args ${ARGS[@]+"${ARGS[@]}"} "${TARGETS[@]}" || status=$?
+if [ "$KNOWN" = 1 ]; then
+  # Only the known-bug tests (skips the args file, whose --exclude known-issue would win over --include).
+  echo "==> Running known-issue tests only (these are EXPECTED to fail until the bugs are fixed)"
+  robot --name "Known Issues" --outputdir results/kiip_co --include known-issue ${ARGS[@]+"${ARGS[@]}"} "${TARGETS[@]}" || status=$?
+else
+  robot -A tests/kiip_co/kiip_co.args ${ARGS[@]+"${ARGS[@]}"} "${TARGETS[@]}" || status=$?
+fi
 echo "==> Report: $(pwd)/results/kiip_co/report.html"
 [ -d results/kiip_co/traces ] && echo "==> Traces in results/kiip_co/traces  (view: bash scripts/show_trace.sh)"
 open results/kiip_co/report.html 2>/dev/null || true
