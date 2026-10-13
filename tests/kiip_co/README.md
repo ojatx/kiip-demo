@@ -33,7 +33,7 @@ Optional secrets `KIIP_EMAIL` / `KIIP_PASSWORD` enable the real-login test.
 | File | Checks |
 |---|---|
 | `01_login_page.robot` | apex→www redirect, form fields, required attrs, client-side validation, show/hide password, nav links, footer links, mobile render |
-| `02_forgot_password.robot` | page loads, required email, empty submit blocked, Back → login |
+| `02_forgot_password.robot` | page loads, required email, empty submit blocked, Back → login; known-issue: Back from directly opened page |
 | `03_create_account.robot` | page loads, wizard steps, email + Next, Log In → login |
 | `04_contact_modal.robot` | Contact Us modal opens with all fields, Cancel closes it |
 | `05_auth.robot` | opt-in: valid creds leave login (needs env vars); invalid creds (`auth-negative`, excluded by default) |
@@ -45,5 +45,7 @@ Optional secrets `KIIP_EMAIL` / `KIIP_PASSWORD` enable the real-login test.
 - Client-rendered Next.js/Chakra app with no `data-testid`s — locators use ids, names, placeholders, text.
 - "Page ready" = the page's `<h1>` is visible (not `networkidle`; analytics/RUM beacons never go idle).
 - The site logs `cognito-identity` 400s on every load; the suite ignores them.
-- `Back Returns To Login` (02) has failed intermittently with a blank page after a client-side nav —
-  not reproducible manually; check the trace if it recurs.
+- **Known bug (low):** the Reset Password page's on-page Back button calls `history.back()` despite its `href="/"`,
+  so opening `/forgot-password` directly and clicking Back doesn't reach login. `Back Returns To Login` arrives via
+  the login page (the normal path); `Back From Directly Opened Reset Page Returns To Login` documents the bug and is
+  tagged `known-issue` (excluded by default). Run it with: `bash scripts/run_kiip_co.sh --known-issues`

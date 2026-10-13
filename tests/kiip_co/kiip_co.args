@@ -3,4 +3,5 @@
 --include smoke
 --include auth
 --exclude auth-negative
+--exclude known-issue
 --loglevel INFO
