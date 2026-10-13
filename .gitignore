@@ -5,3 +5,8 @@ logs/
 __pycache__/
 *.pyc
 .pytest_cache/
+
+# Robot results (kiip.co suite + any future runs)
+results/
+# Local virtualenv. NOTE: venv/ is currently committed; run `git rm -r --cached venv` to untrack it.
+venv/

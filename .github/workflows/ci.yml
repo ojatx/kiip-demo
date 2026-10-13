@@ -8,9 +8,26 @@ on:
       - 'README.md'
   pull_request:
     branches: [ main, develop ]
+  # Manual "Run workflow" button in the Actions tab
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'What to run'
+        type: choice
+        options:
+          - kiip-co-only
+          - full-pipeline
+        default: kiip-co-only
+      trace:
+        description: 'Record Playwright traces + video for the kiip.co suite'
+        type: boolean
+        default: false
 
 jobs:
   smoke:
+    # Push/PR as before; on a manual run only when "full-pipeline" is picked.
+    # (regression + deploy jobs depend on this, so they follow it.)
+    if: github.event_name != 'workflow_dispatch' || inputs.target == 'full-pipeline'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -99,3 +116,49 @@ jobs:
     steps:
       - name: Deploy to Production Stub
         run: echo "Deploying to production environment..."
+
+  # Smoke tests against the LIVE kiip.co site. Manual runs only, and outside the
+  # smoke -> regression -> deploy chain so an external outage can't block a deploy.
+  kiip-co-smoke:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Install Playwright Chromium
+        run: |
+          rfbrowser init chromium
+
+      - name: Run kiip.co smoke tests
+        env:
+          # Optional: add these as repository secrets to enable the real-login test.
+          KIIP_EMAIL: ${{ secrets.KIIP_EMAIL }}
+          KIIP_PASSWORD: ${{ secrets.KIIP_PASSWORD }}
+        run: |
+          robot -A tests/kiip_co/kiip_co.args \
+            -v TRACE:${{ inputs.trace && 'True' || 'False' }} \
+            -v VIDEO:${{ inputs.trace && 'True' || 'False' }} \
+            tests/kiip_co
+
+      - name: Upload kiip.co results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: kiip-co-results
+          path: results/kiip_co/
